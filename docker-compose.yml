@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  synapse:
+    image: matrixdotorg/synapse:latest
+    container_name: synapse
+    ports:
+      - "8008:8008"  # HTTP端口
+      - "8448:8448"  # HTTPS端口
+    volumes:
+      - ./data:/data  # homeserver文件的本地路径映射到容器路径
+    environment:
+      - SYNAPSE_CONFIG_DIR=/data
+      - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
+      - SYNAPSE_SERVER_NAME=synapse
+      - SYNAPSE_REPORT_STATS=no  # 关闭报告统计信息
+      - SYNAPSE_DB_HOST=db  # 指定数据库主机名为db
+      - SYNAPSE_DB_USER=synapse_user  # 指定数据库用户名为synapse_user
+      - SYNAPSE_DB_NAME=synapse  # 指定数据库名称为synapse
+      - SYNAPSE_DB_PASSWORD=your_password  # 指定数据库密码
+    depends_on:
+      - db  # 确保在启动Synapse容器之前启动数据库容器
+    networks:
+      - matrix_net
+    #command: generate
+
+  db:
+    image: postgres:latest
+    container_name: postgres_db
+    restart: always
+    environment:
+      - POSTGRES_DB=synapse  # 指定数据库名称为synapse
+      - POSTGRES_USER=synapse_user  # 指定数据库用户名为synapse_user
+      - POSTGRES_PASSWORD=your_password  # 指定数据库密
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=C
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data  # 将数据库数据目录映射到本地目录
+    ports:
+      - "5412:5432"  # PostgreSQL默认端口
+    networks:
+      - matrix_net
+
+networks:
+  matrix_net:
+    external: true
+
+
